@@ -20,7 +20,7 @@ function App() {
                     </div>
                 </div>
             </header>
-            <div className="max-w-6xl mx-auto grid grid-cols-[2fr,1fr] gap-6">
+            <div className="max-w-6xl mx-auto grid md:grid-cols-[2fr,1fr] gap-6 px-3">
                 <VideoPlayer/>
                 <Playlist/>
             </div>

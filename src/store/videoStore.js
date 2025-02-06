@@ -94,44 +94,87 @@ const useVideoStore = create(persist((set, get) => ({
             }
         }
     },
-    startRecording: () => {
+    startRecording: async () => {
         const stream = get().webcamStream;
         if (stream) {
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'video/webm; codecs=vp9'
-            });
-            const recordedChunks = [];
+            // Get supported MIME types for the current browser
+            const getMimeType = () => {
+                const types = [
+                    'video/webm;codecs=vp9,opus',
+                    'video/webm;codecs=vp8,opus',
+                    'video/webm;codecs=h264,opus',
+                    'video/mp4;codecs=h264,aac',
+                    'video/webm',
+                    'video/mp4'
+                ];
 
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) recordedChunks.push(e.data);
+                for (const type of types) {
+                    if (MediaRecorder.isTypeSupported(type)) {
+                        return type;
+                    }
+                }
+                return '';
             };
 
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `webcam-recording-${new Date().toISOString()}.webm`;
-                a.click();
+            const mimeType = getMimeType();
+            if (!mimeType) {
+                console.error('No supported MIME type found for recording');
+                return;
+            }
 
+            try {
+                const mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: mimeType,
+                    videoBitsPerSecond: 2500000 // 2.5 Mbps
+                });
+
+                const recordedChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: mimeType });
+                    const url = URL.createObjectURL(blob);
+
+                    const fileExtension = mimeType.includes('webm') ? 'webm' : 'mp4';
+
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `webcam-recording-${new Date().toISOString()}.${fileExtension}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    set({
+                        mediaRecorder: null,
+                        recordedChunks: [],
+                        isRecording: false
+                    });
+                };
+
+                mediaRecorder.start(1000);
+
+                set({
+                    mediaRecorder,
+                    recordedChunks,
+                    isRecording: true
+                });
+            } catch (error) {
+                console.error('Error starting recording:', error);
                 set({
                     mediaRecorder: null,
                     recordedChunks: [],
                     isRecording: false
                 });
-            };
-
-            mediaRecorder.start();
-            set({
-                mediaRecorder,
-                recordedChunks,
-                isRecording: true
-            });
+            }
         }
     },
     stopRecording: () => {
         const { mediaRecorder } = get();
-        if (mediaRecorder) {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
             mediaRecorder.stop();
         }
     },

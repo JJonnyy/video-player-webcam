@@ -204,7 +204,7 @@ const VideoPlayer = () => {
     };
 
     return (
-        <div className="relative w-full h-full mx-3 my-3">
+        <div className="relative w-full h-full">
             <video
                 ref={videoRef}
                 className="video-js vjs-big-play-centered w-full h-full"
