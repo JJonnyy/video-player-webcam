@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.vjs-poster.vjs-poster img{
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+
+/* Стили для светлой темы */
+body.light {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* Стили для темной темы */
+body.dark {
+    background-color: #1a1a1a;
+    color: #ffffff;
+}
+.custom-interaction-block{
+    z-index: -1;
+}
